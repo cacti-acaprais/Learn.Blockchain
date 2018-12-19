@@ -1,7 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Text;
-using System.Security.Cryptography;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -120,14 +119,31 @@ namespace Learn.Blockchain.Tests
                 .Select(x => Encoding.UTF8.GetString(x.Document))
                 .ToArray();
 
+            Assert.IsTrue(signedDocuments.All(x => x.Verify()));
             Assert.IsTrue(documentStrings.Count() == 3);
             Assert.AreEqual(fistDocumentString, documentStrings.Last());
         }
 
+        [TestMethod]
+        public void ExtractDocumentsOfRoot()
+        {
+            string documentString = "It's a test with a basic document.";
+
+            Keys user1keys = Keys.Create();
+            IEnumerable<ISignedDocument> signedDocuments = SignedDocument.Create(user1keys, GetDocument(documentString))
+                .ToSignedTransactionRoot()
+                .ToEnumerable();
+
+            string[] documentStrings = signedDocuments
+                .Select(x => Encoding.UTF8.GetString(x.Document))
+                .ToArray();
+
+            Assert.IsTrue(signedDocuments.All(x => x.Verify()));
+            Assert.IsTrue(documentStrings.Count() == 1);
+            Assert.AreEqual(documentString, documentStrings.Single());
+        }
+
         private byte[] GetDocument(string documentString)
             => Encoding.UTF8.GetBytes(documentString);
-
-        private byte[] ConcatDocumentWith(byte[] document, string documentString)
-            => Encoding.UTF8.GetBytes($"{Encoding.UTF8.GetString(document)} {documentString}");
     }
 }
