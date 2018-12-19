@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace Learn.Blockchain.Tests
 {
     [TestClass]
-    public class KeyTests
+    public class Tests
     {
         [TestMethod]
         public void GenerateKeys()
