@@ -6,6 +6,9 @@ namespace Learn.Blockchain
 {
     public interface ISignedTransaction : ISignedDocument
     {
-        ISignedDocument PreviousSignedDocument { get; }
+        /// <summary>
+        /// Previous transaction part. Can be null if root transaction.
+        /// </summary>
+        ISignedTransaction PreviousSignedTransaction { get; }
     }
 }

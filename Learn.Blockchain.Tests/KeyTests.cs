@@ -3,6 +3,7 @@ using System;
 using System.Text;
 using System.Security.Cryptography;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Learn.Blockchain.Tests
 {
@@ -69,13 +70,14 @@ namespace Learn.Blockchain.Tests
             byte[] document = GetDocument("It's a test with a basic document.");
 
             Keys user1keys = Keys.Create();
-            ISignedDocument signedDocument = SignedDocument.Create(user1keys, document);
-            ISignedDocument signedTransaction1 = SignedTransaction.Create(user1keys, ConcatDocumentWith(signedDocument.Document, "Updated."), signedDocument);
-
             Keys user2Keys = Keys.Create();
-            ISignedDocument signedTransaction2 = SignedTransaction.Create(user2Keys, GetDocument("Add a signature to the document."), signedTransaction1);
 
-            Assert.IsTrue(signedTransaction2.Verify());
+            ISignedTransaction signedTransaction = SignedDocument.Create(user1keys, document)
+                .ToSignedTransactionRoot()
+                .Add(user1keys, GetDocument("Updated."))
+                .Add(user2Keys, GetDocument("Add a signature to the document."));
+
+            Assert.IsTrue(signedTransaction.Verify());
         }
 
         [TestMethod]
@@ -84,16 +86,42 @@ namespace Learn.Blockchain.Tests
             byte[] document = GetDocument("It's a test with a basic document.");
 
             Keys user1keys = Keys.Create();
-            ISignedDocument signedDocument = SignedDocument.Create(user1keys, document);
-            ISignedTransaction signedTransaction1 = SignedTransaction.Create(user1keys, ConcatDocumentWith(signedDocument.Document, "Updated."), signedDocument);
-
             Keys user2Keys = Keys.Create();
-            ISignedDocument signedTransaction2 = SignedTransaction.Create(user2Keys, GetDocument("Add a signature to the document."), signedTransaction1);
+            ISignedDocument signedDocument = SignedDocument.Create(user1keys, document);
 
-            ISignedTransaction corruptedTransaction = new SignedTransaction(signedTransaction1.PreviousSignedDocument, GetDocument("Replace with a corrupted document"), signedTransaction1.PublicKey, signedTransaction1.Signature);
+            ISignedTransaction signedTransaction1 = signedDocument
+                .ToSignedTransactionRoot()
+                .Add(user1keys, GetDocument("Updated."));
+
+            ISignedTransaction signedTransaction2 = signedTransaction1
+                .Add(user2Keys, GetDocument("Add a signature to the document."));
+
+            ISignedTransaction corruptedTransaction = new SignedTransaction(signedTransaction1.PreviousSignedTransaction, GetDocument("Replace with a corrupted document"), signedTransaction1.PublicKey, signedTransaction1.Signature);
             signedTransaction2 = new SignedTransaction(corruptedTransaction, signedTransaction2.Document, signedTransaction2.PublicKey, signedTransaction2.Signature);
 
             Assert.IsFalse(signedTransaction2.Verify());
+        }
+
+        [TestMethod]
+        public void ExtractSignedDocuments()
+        {
+            string fistDocumentString = "It's a test with a basic document.";
+
+            Keys user1keys = Keys.Create();
+            Keys user2Keys = Keys.Create();
+
+            IEnumerable<ISignedDocument> signedDocuments = SignedDocument.Create(user1keys, GetDocument(fistDocumentString))
+                .ToSignedTransactionRoot()
+                .Add(user1keys, GetDocument("Updated."))
+                .Add(user2Keys, GetDocument("Add a signature to the document."))
+                .ToEnumerable();
+
+            string[] documentStrings = signedDocuments
+                .Select(x => Encoding.UTF8.GetString(x.Document))
+                .ToArray();
+
+            Assert.IsTrue(documentStrings.Count() == 3);
+            Assert.AreEqual(fistDocumentString, documentStrings.Last());
         }
 
         private byte[] GetDocument(string documentString)

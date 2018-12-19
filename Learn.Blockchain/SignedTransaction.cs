@@ -8,7 +8,7 @@ namespace Learn.Blockchain
 {
     public class SignedTransaction : ISignedTransaction
     {
-        public ISignedDocument PreviousSignedDocument { get; }
+        public ISignedTransaction PreviousSignedTransaction { get; }
 
         public byte[] Document { get; }
 
@@ -16,15 +16,15 @@ namespace Learn.Blockchain
 
         public byte[] Signature { get; }
 
-        public SignedTransaction(ISignedDocument previousSignedDocument, byte[] document, byte[] publicKey, byte[] signature)
+        public SignedTransaction(ISignedTransaction previousSignedDocument, byte[] document, byte[] publicKey, byte[] signature)
         {
-            PreviousSignedDocument = previousSignedDocument ?? throw new ArgumentNullException(nameof(previousSignedDocument));
+            PreviousSignedTransaction = previousSignedDocument ?? throw new ArgumentNullException(nameof(previousSignedDocument));
             Document = document ?? throw new ArgumentNullException(nameof(document));
             PublicKey = publicKey ?? throw new ArgumentNullException(nameof(publicKey));
             Signature = signature ?? throw new ArgumentNullException(nameof(signature));
         }
 
-        public static SignedTransaction Create(Keys keys, byte[] document, ISignedDocument previousSignedDocument)
+        public static SignedTransaction Create(Keys keys, byte[] document, ISignedTransaction previousSignedDocument)
         {
             if (document == null) throw new ArgumentNullException(nameof(document));
             if (previousSignedDocument == null) throw new ArgumentNullException(nameof(previousSignedDocument));
@@ -49,11 +49,11 @@ namespace Learn.Blockchain
             using (ECDsaCng dsa = new ECDsaCng(privateCngKey))
             {
                 byte[] hash = Document
-                    .Concat(PreviousSignedDocument.Signature)
+                    .Concat(PreviousSignedTransaction.Signature)
                     .ToArray();
 
                 dsa.HashAlgorithm = CngAlgorithm.Sha256;
-                return dsa.VerifyData(hash, Signature) && PreviousSignedDocument.Verify();
+                return dsa.VerifyData(hash, Signature) && PreviousSignedTransaction.Verify();
             }
         }
     }
