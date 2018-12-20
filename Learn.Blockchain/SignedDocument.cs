@@ -7,24 +7,24 @@ namespace Learn.Blockchain
 {
     public class SignedDocument : ISignedDocument
     {
-        public byte[] Signature{ get; }
-        public byte[] PublicKey { get; }
-        public byte[] Document { get; }
+        public Signature Signature{ get; }
+        public PublicKey PublicKey { get; }
+        public Document Document { get; }
 
-        public SignedDocument(byte[] document, byte[] publicKey, byte[] signature)
+        public SignedDocument(Document document, PublicKey publicKey, Signature signature)
         {
-            Document = document ?? throw new ArgumentNullException(nameof(document));
-            PublicKey = publicKey ?? throw new ArgumentNullException(nameof(publicKey));
-            Signature = signature ?? throw new ArgumentNullException(nameof(signature));
+            Document = document;
+            PublicKey = publicKey;
+            Signature = signature;
         }
 
-        public static SignedDocument Create(Keys keys, byte[] document)
+        public static SignedDocument Create(Keys keys, Document document)
         {
             using (CngKey privateCngKey = CngKey.Import(keys.PrivateKey, CngKeyBlobFormat.EccPrivateBlob))
             using (ECDsaCng dsa = new ECDsaCng(privateCngKey))
             {
                 dsa.HashAlgorithm = CngAlgorithm.Sha256;
-                byte[] signature = dsa.SignData(document);
+                Signature signature = new Signature(dsa.SignData(document));
                 return new SignedDocument(document, keys.PublicKey, signature);
             }
         }

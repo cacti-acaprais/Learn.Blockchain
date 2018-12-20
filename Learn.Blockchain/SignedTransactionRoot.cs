@@ -16,13 +16,13 @@ namespace Learn.Blockchain
         public ISignedTransaction PreviousSignedTransaction 
             => null;
 
-        public byte[] Document 
+        public Document Document 
             => _signedDocument.Document;
 
-        public byte[] PublicKey 
+        public PublicKey PublicKey 
             => _signedDocument.PublicKey;
 
-        public byte[] Signature 
+        public Signature Signature 
             => _signedDocument.Signature;
 
         public bool Verify()

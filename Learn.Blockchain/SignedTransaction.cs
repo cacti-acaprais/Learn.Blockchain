@@ -10,35 +10,37 @@ namespace Learn.Blockchain
     {
         public ISignedTransaction PreviousSignedTransaction { get; }
 
-        public byte[] Document { get; }
+        public Document Document { get; }
 
-        public byte[] PublicKey { get; }
+        public PublicKey PublicKey { get; }
 
-        public byte[] Signature { get; }
+        public Signature Signature { get; }
 
-        public SignedTransaction(ISignedTransaction previousSignedDocument, byte[] document, byte[] publicKey, byte[] signature)
+        public SignedTransaction(ISignedTransaction previousSignedDocument, Document document, PublicKey publicKey, Signature signature)
         {
             PreviousSignedTransaction = previousSignedDocument ?? throw new ArgumentNullException(nameof(previousSignedDocument));
-            Document = document ?? throw new ArgumentNullException(nameof(document));
-            PublicKey = publicKey ?? throw new ArgumentNullException(nameof(publicKey));
-            Signature = signature ?? throw new ArgumentNullException(nameof(signature));
+            Document = document;
+            PublicKey = publicKey;
+            Signature = signature;
         }
 
-        public static SignedTransaction Create(Keys keys, byte[] document, ISignedTransaction previousSignedDocument)
+        public static SignedTransaction Create(Keys keys, Document document, ISignedTransaction previousSignedDocument)
         {
-            if (document == null) throw new ArgumentNullException(nameof(document));
             if (previousSignedDocument == null) throw new ArgumentNullException(nameof(previousSignedDocument));
             if (!previousSignedDocument.Verify()) throw new ArgumentException("Previous signature is not valid.", nameof(previousSignedDocument));
 
-            byte[] hash = document
-                .Concat(previousSignedDocument.Signature)
+            byte[] previousSignature = previousSignedDocument.Signature;
+            byte[] documentBytes = document;
+
+            byte[] hash = documentBytes
+                .Concat(previousSignature)
                 .ToArray();
 
             using (CngKey privateCngKey = CngKey.Import(keys.PrivateKey, CngKeyBlobFormat.EccPrivateBlob))
             using (ECDsaCng dsa = new ECDsaCng(privateCngKey))
             {
                 dsa.HashAlgorithm = CngAlgorithm.Sha256;
-                byte[] signature = dsa.SignData(hash);
+                Signature signature = new Signature(dsa.SignData(hash));
                 return new SignedTransaction(previousSignedDocument, document, keys.PublicKey, signature);
             }
         }
@@ -48,8 +50,10 @@ namespace Learn.Blockchain
             using (CngKey privateCngKey = CngKey.Import(PublicKey, CngKeyBlobFormat.EccPublicBlob))
             using (ECDsaCng dsa = new ECDsaCng(privateCngKey))
             {
-                byte[] hash = Document
-                    .Concat(PreviousSignedTransaction.Signature)
+                byte[] documentBytes = Document;
+                byte[] previousSignature = PreviousSignedTransaction.Signature;
+                byte[] hash = documentBytes
+                    .Concat(previousSignature)
                     .ToArray();
 
                 dsa.HashAlgorithm = CngAlgorithm.Sha256;

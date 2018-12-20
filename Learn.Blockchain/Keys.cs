@@ -5,13 +5,13 @@ namespace Learn.Blockchain
 {
     public struct Keys
     {
-        public byte[] PrivateKey { get; }
-        public byte[] PublicKey { get; }
+        public PrivateKey PrivateKey { get; }
+        public PublicKey PublicKey { get; }
 
-        public Keys(byte[] privateKey, byte[] publicKey)
+        public Keys(PrivateKey privateKey, PublicKey publicKey)
         {
-            PrivateKey = privateKey ?? throw new ArgumentNullException(nameof(privateKey));
-            PublicKey = publicKey ?? throw new ArgumentNullException(nameof(publicKey));
+            PrivateKey = privateKey;
+            PublicKey = publicKey;
         }
 
         public static Keys Create()
@@ -22,8 +22,8 @@ namespace Learn.Blockchain
             }))
             {
                 return new Keys(
-                    privateKey: cngKey.Export(CngKeyBlobFormat.EccPrivateBlob),
-                    publicKey: cngKey.Export(CngKeyBlobFormat.EccPublicBlob));
+                    privateKey: new PrivateKey(cngKey.Export(CngKeyBlobFormat.EccPrivateBlob)),
+                    publicKey: new PublicKey(cngKey.Export(CngKeyBlobFormat.EccPublicBlob)));
             }
         }
     }

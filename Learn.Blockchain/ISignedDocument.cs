@@ -6,9 +6,9 @@ namespace Learn.Blockchain
 {
     public interface ISignedDocument
     {
-        byte[] Document { get; }
-        byte[] PublicKey { get; }
-        byte[] Signature { get; }
+        Document Document { get; }
+        PublicKey PublicKey { get; }
+        Signature Signature { get; }
 
         bool Verify();
     }

@@ -10,7 +10,7 @@ namespace Learn.Blockchain
         public static ISignedTransaction ToSignedTransactionRoot(this ISignedDocument signedDocument)
             => new SignedTransactionRoot(signedDocument);
 
-        public static ISignedTransaction Add(this ISignedTransaction signedTransaction, Keys keys, byte[] document)
+        public static ISignedTransaction Add(this ISignedTransaction signedTransaction, Keys keys, Document document)
             => SignedTransaction.Create(keys, document, signedTransaction);
 
         public static IEnumerable<ISignedDocument> ToEnumerable(this ISignedTransaction signedTransaction)

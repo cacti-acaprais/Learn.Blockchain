@@ -15,30 +15,29 @@ namespace Learn.Blockchain.Tests
             Keys keys = Keys.Create();
             Assert.IsNotNull(keys);
 
-            Assert.IsTrue(keys.PublicKey.Any());
-            Assert.IsTrue(keys.PrivateKey.Any());
+            byte[] publicKey = keys.PublicKey;
+            byte[] privateKey = keys.PrivateKey;
+
+            Assert.IsTrue(publicKey.Any());
+            Assert.IsTrue(privateKey.Any());
         }
 
         [TestMethod]
         public void SignedDocumentValid()
         {
-            byte[] document = GetDocument("It's a test with a basic document.");
-
             Keys keys = Keys.Create();
-            SignedDocument signedDocument = SignedDocument.Create(keys, document);
+            SignedDocument signedDocument = SignedDocument.Create(keys, DocumentConverter.STRING.Get("It's a test with a basic document."));
             Assert.IsTrue(signedDocument.Verify());
         }
 
         [TestMethod]
         public void CorruptedDocument()
         {
-            byte[] document = GetDocument("It's a test with a basic document.");
-
             Keys keys = Keys.Create();
-            SignedDocument signedDocument = SignedDocument.Create(keys, document);
+            SignedDocument signedDocument = SignedDocument.Create(keys, DocumentConverter.STRING.Get("It's a test with a basic document."));
 
             var corruptedDocument = new SignedDocument(
-                document: GetDocument("It's a test with a different document."),
+                document: DocumentConverter.STRING.Get("It's a test with a different document."),
                 publicKey: signedDocument.PublicKey, 
                 signature: signedDocument.Signature);
 
@@ -49,10 +48,8 @@ namespace Learn.Blockchain.Tests
         [TestMethod]
         public void CorruptedUser()
         {
-            byte[] document = GetDocument("It's a test with a basic document.");
-
             Keys keys = Keys.Create();
-            ISignedDocument signedDocument = SignedDocument.Create(keys, document);
+            ISignedDocument signedDocument = SignedDocument.Create(keys, DocumentConverter.STRING.Get("It's a test with a basic document."));
 
             var corruptedDocument = new SignedDocument(
                 document: signedDocument.Document,
@@ -66,15 +63,13 @@ namespace Learn.Blockchain.Tests
         [TestMethod]
         public void CreateTransactions()
         {
-            byte[] document = GetDocument("It's a test with a basic document.");
-
             Keys user1keys = Keys.Create();
             Keys user2Keys = Keys.Create();
 
-            ISignedTransaction signedTransaction = SignedDocument.Create(user1keys, document)
+            ISignedTransaction signedTransaction = SignedDocument.Create(user1keys, DocumentConverter.STRING.Get("It's a test with a basic document."))
                 .ToSignedTransactionRoot()
-                .Add(user1keys, GetDocument("Updated."))
-                .Add(user2Keys, GetDocument("Add a signature to the document."));
+                .Add(user1keys, DocumentConverter.STRING.Get("Updated."))
+                .Add(user2Keys, DocumentConverter.STRING.Get("Add a signature to the document."));
 
             Assert.IsTrue(signedTransaction.Verify());
         }
@@ -82,20 +77,18 @@ namespace Learn.Blockchain.Tests
         [TestMethod]
         public void CorruptedTransactions()
         {
-            byte[] document = GetDocument("It's a test with a basic document.");
-
             Keys user1keys = Keys.Create();
             Keys user2Keys = Keys.Create();
-            ISignedDocument signedDocument = SignedDocument.Create(user1keys, document);
+            ISignedDocument signedDocument = SignedDocument.Create(user1keys, DocumentConverter.STRING.Get("It's a test with a basic document."));
 
             ISignedTransaction signedTransaction1 = signedDocument
                 .ToSignedTransactionRoot()
-                .Add(user1keys, GetDocument("Updated."));
+                .Add(user1keys, DocumentConverter.STRING.Get("Updated."));
 
             ISignedTransaction signedTransaction2 = signedTransaction1
-                .Add(user2Keys, GetDocument("Add a signature to the document."));
+                .Add(user2Keys, DocumentConverter.STRING.Get("Add a signature to the document."));
 
-            ISignedTransaction corruptedTransaction = new SignedTransaction(signedTransaction1.PreviousSignedTransaction, GetDocument("Replace with a corrupted document"), signedTransaction1.PublicKey, signedTransaction1.Signature);
+            ISignedTransaction corruptedTransaction = new SignedTransaction(signedTransaction1.PreviousSignedTransaction, DocumentConverter.STRING.Get("Replace with a corrupted document"), signedTransaction1.PublicKey, signedTransaction1.Signature);
             signedTransaction2 = new SignedTransaction(corruptedTransaction, signedTransaction2.Document, signedTransaction2.PublicKey, signedTransaction2.Signature);
 
             Assert.IsFalse(signedTransaction2.Verify());
@@ -109,14 +102,14 @@ namespace Learn.Blockchain.Tests
             Keys user1keys = Keys.Create();
             Keys user2Keys = Keys.Create();
 
-            IEnumerable<ISignedDocument> signedDocuments = SignedDocument.Create(user1keys, GetDocument(fistDocumentString))
+            IEnumerable<ISignedDocument> signedDocuments = SignedDocument.Create(user1keys, DocumentConverter.STRING.Get(fistDocumentString))
                 .ToSignedTransactionRoot()
-                .Add(user1keys, GetDocument("Updated."))
-                .Add(user2Keys, GetDocument("Add a signature to the document."))
+                .Add(user1keys, DocumentConverter.STRING.Get("Updated."))
+                .Add(user2Keys, DocumentConverter.STRING.Get("Add a signature to the document."))
                 .ToEnumerable();
 
             string[] documentStrings = signedDocuments
-                .Select(x => Encoding.UTF8.GetString(x.Document))
+                .Select(x => DocumentConverter.STRING.Get(x.Document))
                 .ToArray();
 
             Assert.IsTrue(signedDocuments.All(x => x.Verify()));
@@ -130,12 +123,12 @@ namespace Learn.Blockchain.Tests
             string documentString = "It's a test with a basic document.";
 
             Keys user1keys = Keys.Create();
-            IEnumerable<ISignedDocument> signedDocuments = SignedDocument.Create(user1keys, GetDocument(documentString))
+            IEnumerable<ISignedDocument> signedDocuments = SignedDocument.Create(user1keys, DocumentConverter.STRING.Get(documentString))
                 .ToSignedTransactionRoot()
                 .ToEnumerable();
 
             string[] documentStrings = signedDocuments
-                .Select(x => Encoding.UTF8.GetString(x.Document))
+                .Select(x => DocumentConverter.STRING.Get(x.Document))
                 .ToArray();
 
             Assert.IsTrue(signedDocuments.All(x => x.Verify()));
@@ -143,7 +136,17 @@ namespace Learn.Blockchain.Tests
             Assert.AreEqual(documentString, documentStrings.Single());
         }
 
-        private byte[] GetDocument(string documentString)
-            => Encoding.UTF8.GetBytes(documentString);
+        [TestMethod]
+        public void ConvertDocument()
+        {
+            string message = "It's a test with a basic document.";
+
+            Document document = DocumentConverter.STRING.Get(message);
+            string base64Document = DocumentConverter.BASE64.Get(document);
+            Document fromBase64Document = DocumentConverter.BASE64.Get(base64Document);
+            string stringDocument = DocumentConverter.STRING.Get(fromBase64Document);
+
+            Assert.AreEqual(message, stringDocument);
+        }
     }
 }
