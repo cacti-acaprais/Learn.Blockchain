@@ -148,5 +148,21 @@ namespace Learn.Blockchain.Tests
 
             Assert.AreEqual(message, stringDocument);
         }
+
+        [TestMethod]
+        public void ComposedConversion()
+        {
+            string message = "It's à tèst with a basic document.";
+
+            //Convert a string document to a base64 document
+            DocumentConverter<string> documentConverter = DocumentConverter
+                .STRING
+                .Compose(DocumentConverter.BASE64);
+
+            Document document = documentConverter.Get(message);
+            string stringDocument = documentConverter.Get(document);
+
+            Assert.AreEqual(message, stringDocument);
+        }
     }
 }
